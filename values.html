@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1090, initial-scale=1.0" />
+  <title>תרגיל ברור ערכים – RTL</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{ --accent:#3a7172; --ink:#000; --bg:#F5F5F5; --bw:1.5px; }
+    *{ font-family:'Heebo',system-ui,-apple-system,'Segoe UI',Arial,sans-serif; }
+    body{ margin:0; padding:0; background:var(--bg); }
+    .no-select{ -webkit-user-select:none; -moz-user-select:none; user-select:none; }
+    .chip{ height:36px; min-height:36px; max-height:36px; }
+    .chip-label{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; white-space:normal; line-height:1.1; }
+    .texture-grid{ background-image: linear-gradient(rgba(0,0,0,.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,.03) 1px, transparent 1px); background-size: 16px 16px; }
+    .lanes{ background-image: repeating-linear-gradient( to bottom, rgba(0,0,0,.035) 0, rgba(0,0,0,.035) 66px, transparent 66px, transparent 86px ); }
+    .btn{ border:var(--bw) solid #111; background:#fff; color:#000; transition:all .15s ease; }
+    .btn:hover{ background:#f5f5f5; }
+    .btn--active{ border:var(--bw) solid var(--accent); background:#000; color:#fff; }
+    .btn-ghost{ border:var(--bw) solid #e5e7eb; background:#fff; color:#000; }
+    .btn-accent{ border:var(--bw) solid var(--accent); background:#fff; color:#000; }
+    .ring-focus:focus-visible{ outline:3px solid rgba(58,113,114,.35); outline-offset:2px; }
+    .step{ border:1.5px solid #e5e7eb; }
+    .step--on{ background:var(--accent); color:#fff; border-color:var(--accent); }
+    .step--disabled{ opacity:.35; cursor:not-allowed; }
+  </style>
+</head>
+<body class="overflow-hidden">
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const GripVertical = ({ size = 22, className='' }) => (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className} aria-hidden="true">
+        <circle cx="9" cy="12" r="1"></circle>
+        <circle cx="9" cy="5" r="1"></circle>
+        <circle cx="9" cy="19" r="1"></circle>
+        <circle cx="15" cy="12" r="1"></circle>
+        <circle cx="15" cy="5" r="1"></circle>
+        <circle cx="15" cy="19" r="1"></circle>
+      </svg>
+    );
+
+    // ספריית אייקוני SVG מינימלית (שחור-לבן) + ברירת מחדל
+    const ICON = {
+      heart: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 22l7.8-8.6 1-1a5.5 5.5 0 0 0 0-7.8z"/>
+        </svg>
+      ),
+      shield: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path d="M12 2l7 4v6c0 5-3.5 9.5-7 10-3.5-.5-7-5-7-10V6l7-4z"/>
+        </svg>
+      ),
+      scales: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path d="M12 3v18M5 7l-3 5h6l-3-5zm14 0l-3 5h6l-3-5zM2 22h20"/>
+        </svg>
+      ),
+      lightbulb: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path d="M9 18h6M8 22h8M12 2a7 7 0 0 0-4 12c1 1 1 2 1 3h6c0-1 0-2 1-3a7 7 0 0 0-4-12z"/>
+        </svg>
+      ),
+      users: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm10 14v-2a4 4 0 0 0-3-3"/>
+        </svg>
+      ),
+      book: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4v15.5M20 4v15M6.5 4H20"/>
+        </svg>
+      ),
+      sprout: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path d="M7 20c5 0 2-8 10-8-1.5 3-4 4-6 4m1-5c0-5 4-8 8-8-1 4-4 6-8 6M5 22h14"/>
+        </svg>
+      ),
+      trophy: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path d="M8 21h8M9 17h6M12 2v6a4 4 0 0 0 4 4h1a4 4 0 0 0 4-4V6H3v2a4 4 0 0 0 4 4h1a4 4 0 0 0 4-4"/>
+        </svg>
+      ),
+      tag: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path d="M20.5 13.5L11 4H4v7l9.5 9.5a2 2 0 0 0 2.8 0l4.2-4.2a2 2 0 0 0 0-2.8z"/>
+          <circle cx="7.5" cy="7.5" r="1.5"/>
+        </svg>
+      )
+    };
+
+    const ALL_VALUES = [
+      'אדיבות','אהבה','אהבת המולדת','אומץ','אופטימיות','אושר','אותנטיות','אחדות','אחריות','איזון','אכפתיות','אמון','אמונה','אמפתיה','אמת','אנושיות','אסרטיביות','אצילות','בהירות','בחירה','ביטחון','ביטוי עצמי','בין אדם לחברו','בריאות','גאווה','גבורה','גמישות','דוגמא אישית','הבנה','הגיון','הגינות','הגנה','הגשמה','הדדיות','הובלה','הומור','הוקרת תודה','הזדהות','הישגיות','החלטיות','הסתגלות','הסתפקות במועט','הערכה','הצלחה','הקשבה','הרמוניה','השפעה','התלהבות','התמדה','חברות','חדשנות','חופש בחירה','חיים','חכמת חיים','חמלה','חריצות','ידע','יוזמה','יושר פנימי','יושרה','ייחודיות','יסודיות','יעילות','יציבות','יצירתיות','כבוד','כבוד המשפחה','כיבוד האדם','כנות','למידה','לקיחת סיכונים','מחויבות','מחילה','מיקוד במטרה','מנהיגות','מסורת','מסירות','מעורבות','מעשיות','מצוינות','מקוריות','מקצועיות','משמעת עצמית','משפחה','נאמנות','נדיבות','נוחות','נחישות','ניקיון','נתינה','סבלנות','סדר','סובלנות','ספונטניות','עבודת צוות','עזרה לזולת','ענווה','עצמאות','עקביות','פשטות','פתיחות','צדק','צמיחה','צניעות','קבלה עצמית','רוגע','רוחניות','רעות','שאפתנות','שוויון','שותפות','שיתוף פעולה','שמחת חיים','תמימות','תעוזה','תקווה','תקשורת'
+    ];
+
+    // מפה בסיסית מערך→אייקון
+    const ICON_MAP = {
+      'אהבה': 'heart',
+      'ביטחון': 'shield',
+      'צדק': 'scales',
+      'חדשנות': 'lightbulb',
+      'רעות': 'users',
+      'למידה': 'book',
+      'צמיחה': 'sprout',
+      'מצוינות': 'trophy'
+    };
+
+    const rankColors = ['#0f3d3e','#205a5b','#3a7172','#7fb0b0','#bfd8d8']; // 1→5
+
+    const ValuesExercise = () => {
+      const [stage, setStage] = useState(1); // 1=select, 2=rank, 3=reflect
+      const [selected, setSelected] = useState([]);
+      const [ranked, setRanked] = useState([]);
+      const [dragIdx, setDragIdx] = useState(null);
+
+      const COLS = 12; // רוחב אחיד לכל קפסולה
+      const values = ALL_VALUES;
+
+      const toggleValue = (v) => {
+        if (selected.includes(v)) setSelected(selected.filter(x=>x!==v));
+        else if (selected.length<5) setSelected([...selected,v]);
+      };
+      const resetSelect = () => setSelected([]);
+
+      const proceedToRank = () => { if (selected.length === 5) { setRanked(selected.map((v,i)=>({value:v,rank:i+1}))); setStage(2); } }; 
+
+      // Drag
+      const onDragStart=(e,idx)=>{ setDragIdx(idx); e.dataTransfer.effectAllowed='move'; };
+      const onDragOver=(e,idx)=>{
+        e.preventDefault(); if(dragIdx===null||dragIdx===idx) return;
+        const arr=[...ranked]; const it=arr[dragIdx]; arr.splice(dragIdx,1); arr.splice(idx,0,it);
+        setDragIdx(idx); setRanked(arr.map((o,i)=>({...o,rank:i+1})));
+      };
+      const onDragEnd=()=> setDragIdx(null);
+
+      const canGoRank = selected.length===5;
+      const canGoReflect = ranked.length===5;
+
+      const Stepper = () => (
+        <div className="px-4 py-2 border-b" style={{borderColor:'#e5e7eb'}}>
+          <div className="grid grid-cols-3 gap-2">
+            {[{i:1,t:'בחירה',enabled:true},{i:2,t:'דירוג',enabled:canGoRank},{i:3,t:'רפלקציה',enabled:canGoReflect}].map(s=> (
+              <button key={s.i} onClick={()=> s.enabled && setStage(s.i)} className={`step rounded-xl px-3 py-2 flex items-center gap-2 text-sm font-medium ${stage===s.i?'step--on':''} ${s.enabled?'cursor-pointer':'step--disabled'}`}>
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold bg-black text-white">{s.i}</span>
+                <span>{s.t}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+
+      return (
+        <div className="no-select" style={{ width:'1090px', height:'535px' }}>
+          <div className="h-full w-full flex flex-col bg-white">
+            <Stepper/>
+
+            <div className="flex-1 overflow-hidden">
+              <div className="h-full flex flex-row p-4 gap-4">
+                {/* RIGHT PANEL */}
+                {stage!==3 && (
+                  <aside className="w-60 flex flex-col flex-shrink-0">
+                    <div className="bg-white rounded-2xl p-3 border flex-1" style={{borderColor:'#e5e7eb'}}>
+                      {stage===1 && (
+                        <div className="h-full flex flex-col">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="text-sm font-semibold" style={{color:'var(--ink)'}}>בחירת ערכים</div>
+                            <div className="text-xs font-medium px-2 py-1 rounded-full border" style={{background:'#eaf2f2', borderColor:'var(--accent)', color:'var(--ink)'}}>{selected.length}/5</div>
+                          </div>
+                          <div className="text-[11px] text-gray-600">בחרו עד 5 ערכים. להסרה – לחיצה חוזרת.</div>
+                          <div className="mt-2 grid grid-cols-1 gap-1.5">
+                            {selected.map((v,i)=> (
+                              <div key={v} className="text-xs px-2 h-[30px] rounded-full border flex items-center gap-1" style={{borderColor:'#e5e7eb'}}>
+                                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold bg-black text-white">{i+1}</span>
+                                <span className="truncate">{v}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="mt-2 grid grid-cols-2 gap-2">
+                            <button onClick={resetSelect} className="rounded-full px-3 py-1.5 text-xs font-medium btn-ghost ring-focus">איפוס</button>
+                            <button onClick={proceedToRank} className={`rounded-full px-3 py-1.5 text-xs font-medium btn-accent ring-focus ${!canGoRank?'opacity-40 pointer-events-none':''}`}>המשיכו לדירוג</button>
+                          </div>
+                        </div>
+                      )}
+
+                      {stage===2 && (
+                        <div className="h-full flex flex-col">
+                          <div className="text-sm font-semibold mb-2" style={{color:'var(--ink)'}}>🏆 הסדר שנבנה</div>
+                          <ol className="space-y-1.5 flex-1 overflow-hidden">
+                            {ranked.map((it)=> (
+                              <li key={it.value} className="flex items-center gap-2 px-2 py-1.5 rounded-full border" style={{borderColor:'#e5e7eb'}}>
+                                <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{background:rankColors[it.rank-1], color:'#fff'}}>{it.rank}</div>
+                                <span className="text-xs font-medium truncate" style={{color:'var(--ink)'}}>{it.value}</span>
+                              </li>
+                            ))}
+                          </ol>
+                          <div className="mt-2 grid grid-cols-2 gap-2">
+                            <button onClick={()=> setStage(1)} className="rounded-full px-3 py-1.5 text-xs font-medium btn-ghost ring-focus">חזרו</button>
+                            <button onClick={()=> setStage(3)} className="rounded-full px-3 py-1.5 text-xs font-medium btn-accent ring-focus">המשיכו לרפלקציה</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </aside>
+                )}
+
+                {/* LEFT MAIN */}
+                <main className={`flex-1 min-w-0 overflow-hidden rounded-2xl border relative ${stage===2? 'lanes':'texture-grid'}`} style={{borderColor:'#e5e7eb'}}>
+                  {stage===1 && (
+                    <div className="absolute inset-0 p-2">
+                      <div className="grid gap-1.5" style={{gridTemplateColumns:`repeat(${COLS}, minmax(0, 1fr))`, gridAutoRows:'minmax(36px,auto)'}}>
+                        {values.map((value, idx) => {
+                          const isSel = selected.includes(value);
+                          const lockedOut = selected.length>=5 && !isSel;
+                          return (
+                            <button key={idx}
+                              onClick={()=>toggleValue(value)}
+                              className={`w-full px-1.5 rounded-full text-[11px] flex items-center justify-center chip transition-all ring-focus ${isSel? 'btn--active':'btn'} ${lockedOut? 'opacity-25 pointer-events-none':''}`}
+                              aria-pressed={isSel}
+                              title={value}
+                            >
+                              <span className="chip-label w-full text-center">{value}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {stage===2 && (
+                    <div className="absolute inset-0 p-3 grid grid-rows-5 gap-2">
+                      {ranked.map((it, idx)=> (
+                        <div key={it.value} draggable onDragStart={(e)=>onDragStart(e,idx)} onDragOver={(e)=>onDragOver(e,idx)} onDragEnd={onDragEnd}
+                          className={`bg-white rounded-2xl px-3 flex items-center gap-3 cursor-move border-2 transition-all ring-focus ${dragIdx===idx? 'opacity-75 scale-[.99]':'opacity-100'}`}
+                          style={{borderColor:'#e5e7eb'}}>
+                          <div className="text-gray-400" aria-hidden="true"><GripVertical/></div>
+                          <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold" style={{background:rankColors[it.rank-1], color:'#fff'}}>{it.rank}</div>
+                          <div className="text-xl" aria-hidden="true">{ICON[ICON_MAP[it.value]] || ICON.tag}</div>
+                          <div className="flex-1 text-base font-medium truncate" style={{color:'var(--ink)'}} title={it.value}>{it.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {stage===3 && (
+                    <div className="absolute inset-0 p-5 flex flex-col">
+                      <div className="ml-auto w-1/2 h-full flex flex-col">
+                        <h2 className="text-xl font-semibold mb-3" style={{color:'var(--ink)'}}>💭 רגע של רפלקציה</h2>
+                        <div className="rounded-2xl border p-3 mb-4" style={{borderColor:'var(--accent)', background:'#ffffff'}}>
+                          <div className="text-sm font-semibold mb-2" style={{color:'var(--ink)'}}>הערכים שנבחרו</div>
+                          <ol className="space-y-1">
+                            {ranked.map((it)=> (
+                              <li key={it.value} className="flex items-center gap-2">
+                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold" style={{background:rankColors[it.rank-1], color:'#fff'}}>{it.rank}</span>
+                                <span className="text-sm" style={{color:'var(--ink)'}}>{it.value}</span>
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
+                        <div className="rounded-2xl border p-4" style={{borderColor:'#e5e7eb', background:'#fafafa'}}>
+                          <p className="text-sm leading-relaxed" style={{color:'#111'}}>
+                            הסתכלו על 5 הערכים שנבחרו. חשבו על מקרה מהחודש האחרון בעבודה –
+                            באיזה מצב הערך <strong>"{ranked[0]?.value || 'הראשון'}"</strong> באמת הנחה אתכם בהחלטה?
+                          </p>
+                        </div>
+                        <div className="mt-auto">
+                          <button onClick={()=>setStage(2)} className="rounded-full px-4 py-2 text-sm font-medium btn-ghost ring-focus">חזרו לדירוג</button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </main>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<ValuesExercise/>);
+  </script>
+</body>
+</html>
