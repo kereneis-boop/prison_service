@@ -34,7 +34,7 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState } = React;
 
     const GripVertical = ({ size = 22, className='' }) => (
       <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className} aria-hidden="true">
@@ -116,10 +116,11 @@
     const rankColors = ['#0f3d3e','#205a5b','#3a7172','#7fb0b0','#bfd8d8']; // 1→5
 
     const ValuesExercise = () => {
-      const [stage, setStage] = useState(1); // 1=select, 2=rank, 3=reflect
+      const [stage, setStage] = useState(1); // 1=select, 2=rank
       const [selected, setSelected] = useState([]);
       const [ranked, setRanked] = useState([]);
       const [dragIdx, setDragIdx] = useState(null);
+      const [copiedRank, setCopiedRank] = useState(false);
 
       const COLS = 12; // רוחב אחיד לכל קפסולה
       const values = ALL_VALUES;
@@ -130,7 +131,22 @@
       };
       const resetSelect = () => setSelected([]);
 
-      const proceedToRank = () => { if (selected.length === 5) { setRanked(selected.map((v,i)=>({value:v,rank:i+1}))); setStage(2); } }; 
+      const proceedToRank = () => { if (selected.length === 5) { setRanked(selected.map((v,i)=>({value:v,rank:i+1}))); setStage(2); } };
+
+      // SINGLE definition of copyRanked (fixed duplicate)
+      const copyRanked = async () => {
+        const text = ranked.map(it=> `${it.rank}. ${it.value}`).join(' | ');
+        try {
+          await navigator.clipboard.writeText(text);
+          setCopiedRank(true);
+          setTimeout(()=>setCopiedRank(false),1200);
+        } catch(e){
+          const ta=document.createElement('textarea');
+          ta.value=text; document.body.appendChild(ta); ta.select();
+          document.execCommand('copy'); document.body.removeChild(ta);
+          setCopiedRank(true); setTimeout(()=>setCopiedRank(false),1200);
+        }
+      };
 
       // Drag
       const onDragStart=(e,idx)=>{ setDragIdx(idx); e.dataTransfer.effectAllowed='move'; };
@@ -142,12 +158,15 @@
       const onDragEnd=()=> setDragIdx(null);
 
       const canGoRank = selected.length===5;
-      const canGoReflect = ranked.length===5;
+
+      // --- DEV sanity checks ("test cases" in console) ---
+      console.assert(typeof copyRanked === 'function', 'copyRanked should be a function');
+      console.assert(Array.isArray(ALL_VALUES) && ALL_VALUES.length > 0, 'ALL_VALUES should be a non-empty array');
 
       const Stepper = () => (
         <div className="px-4 py-2 border-b" style={{borderColor:'#e5e7eb'}}>
-          <div className="grid grid-cols-3 gap-2">
-            {[{i:1,t:'בחירה',enabled:true},{i:2,t:'דירוג',enabled:canGoRank},{i:3,t:'רפלקציה',enabled:canGoReflect}].map(s=> (
+          <div className="grid grid-cols-2 gap-2">
+            {[{i:1,t:'בחירה',enabled:true},{i:2,t:'דירוג',enabled:canGoRank}].map(s=> (
               <button key={s.i} onClick={()=> s.enabled && setStage(s.i)} className={`step rounded-xl px-3 py-2 flex items-center gap-2 text-sm font-medium ${stage===s.i?'step--on':''} ${s.enabled?'cursor-pointer':'step--disabled'}`}>
                 <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold bg-black text-white">{s.i}</span>
                 <span>{s.t}</span>
@@ -165,51 +184,49 @@
             <div className="flex-1 overflow-hidden">
               <div className="h-full flex flex-row p-4 gap-4">
                 {/* RIGHT PANEL */}
-                {stage!==3 && (
-                  <aside className="w-60 flex flex-col flex-shrink-0">
-                    <div className="bg-white rounded-2xl p-3 border flex-1" style={{borderColor:'#e5e7eb'}}>
-                      {stage===1 && (
-                        <div className="h-full flex flex-col">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="text-sm font-semibold" style={{color:'var(--ink)'}}>בחירת ערכים</div>
-                            <div className="text-xs font-medium px-2 py-1 rounded-full border" style={{background:'#eaf2f2', borderColor:'var(--accent)', color:'var(--ink)'}}>{selected.length}/5</div>
-                          </div>
-                          <div className="text-[11px] text-gray-600">בחרו עד 5 ערכים. להסרה – לחיצה חוזרת.</div>
-                          <div className="mt-2 grid grid-cols-1 gap-1.5">
-                            {selected.map((v,i)=> (
-                              <div key={v} className="text-xs px-2 h-[30px] rounded-full border flex items-center gap-1" style={{borderColor:'#e5e7eb'}}>
-                                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold bg-black text-white">{i+1}</span>
-                                <span className="truncate">{v}</span>
-                              </div>
-                            ))}
-                          </div>
-                          <div className="mt-2 grid grid-cols-2 gap-2">
-                            <button onClick={resetSelect} className="rounded-full px-3 py-1.5 text-xs font-medium btn-ghost ring-focus">איפוס</button>
-                            <button onClick={proceedToRank} className={`rounded-full px-3 py-1.5 text-xs font-medium btn-accent ring-focus ${!canGoRank?'opacity-40 pointer-events-none':''}`}>המשיכו לדירוג</button>
-                          </div>
+                <aside className="w-60 flex flex-col flex-shrink-0">
+                  <div className="bg-white rounded-2xl p-3 border flex-1" style={{borderColor:'#e5e7eb'}}>
+                    {stage===1 && (
+                      <div className="h-full flex flex-col">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="text-sm font-semibold" style={{color:'var(--ink)'}}>בחירת ערכים</div>
+                          <div className="text-xs font-medium px-2 py-1 rounded-full border" style={{background:'#eaf2f2', borderColor:'var(--accent)', color:'var(--ink)'}}>{selected.length}/5</div>
                         </div>
-                      )}
+                        <div className="text-[11px] text-gray-600">בחרו עד 5 ערכים. להסרה – לחיצה חוזרת.</div>
+                        <div className="mt-2 grid grid-cols-1 gap-1.5">
+                          {selected.map((v,i)=> (
+                            <div key={v} className="text-xs px-2 h-[30px] rounded-full border flex items-center gap-1" style={{borderColor:'#e5e7eb'}}>
+                              <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold bg-black text-white">{i+1}</span>
+                              <span className="truncate">{v}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-2 grid grid-cols-2 gap-2">
+                          <button onClick={resetSelect} className="rounded-full px-3 py-1.5 text-xs font-medium btn-ghost ring-focus">איפוס</button>
+                          <button onClick={proceedToRank} className={`rounded-full px-3 py-1.5 text-xs font-medium btn-accent ring-focus ${!canGoRank?'opacity-40 pointer-events-none':''}`}>המשיכו לדירוג</button>
+                        </div>
+                      </div>
+                    )}
 
-                      {stage===2 && (
-                        <div className="h-full flex flex-col">
-                          <div className="text-sm font-semibold mb-2" style={{color:'var(--ink)'}}>🏆 הסדר שנבנה</div>
-                          <ol className="space-y-1.5 flex-1 overflow-hidden">
-                            {ranked.map((it)=> (
-                              <li key={it.value} className="flex items-center gap-2 px-2 py-1.5 rounded-full border" style={{borderColor:'#e5e7eb'}}>
-                                <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{background:rankColors[it.rank-1], color:'#fff'}}>{it.rank}</div>
-                                <span className="text-xs font-medium truncate" style={{color:'var(--ink)'}}>{it.value}</span>
-                              </li>
-                            ))}
-                          </ol>
-                          <div className="mt-2 grid grid-cols-2 gap-2">
-                            <button onClick={()=> setStage(1)} className="rounded-full px-3 py-1.5 text-xs font-medium btn-ghost ring-focus">חזרו</button>
-                            <button onClick={()=> setStage(3)} className="rounded-full px-3 py-1.5 text-xs font-medium btn-accent ring-focus">המשיכו לרפלקציה</button>
-                          </div>
+                    {stage===2 && (
+                      <div className="h-full flex flex-col">
+                        <div className="text-sm font-semibold mb-2" style={{color:'var(--ink)'}}>🏆 הסדר שנבנה</div>
+                        <ol className="space-y-1.5 flex-1 overflow-hidden">
+                          {ranked.map((it)=> (
+                            <li key={it.value} className="flex items-center gap-2 px-2 py-1.5 rounded-full border" style={{borderColor:'#e5e7eb'}}>
+                              <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" style={{background:rankColors[it.rank-1], color:'#fff'}}>{it.rank}</div>
+                              <span className="text-xs font-medium truncate" style={{color:'var(--ink)'}}>{it.value}</span>
+                            </li>
+                          ))}
+                        </ol>
+                        <div className="mt-2 grid grid-cols-2 gap-2">
+                          <button onClick={()=> setStage(1)} className="rounded-full px-3 py-1.5 text-xs font-medium btn-ghost ring-focus">חזרו</button>
+                          <button onClick={copyRanked} className="rounded-full px-3 py-1.5 text-xs font-medium btn-accent ring-focus">{copiedRank ? 'הועתק ללוח ✔' : 'העתיקו ללוח'}</button>
                         </div>
-                      )}
-                    </div>
-                  </aside>
-                )}
+                      </div>
+                    )}
+                  </div>
+                </aside>
 
                 {/* LEFT MAIN */}
                 <main className={`flex-1 min-w-0 overflow-hidden rounded-2xl border relative ${stage===2? 'lanes':'texture-grid'}`} style={{borderColor:'#e5e7eb'}}>
@@ -246,34 +263,6 @@
                           <div className="flex-1 text-base font-medium truncate" style={{color:'var(--ink)'}} title={it.value}>{it.value}</div>
                         </div>
                       ))}
-                    </div>
-                  )}
-
-                  {stage===3 && (
-                    <div className="absolute inset-0 p-5 flex flex-col">
-                      <div className="ml-auto w-1/2 h-full flex flex-col">
-                        <h2 className="text-xl font-semibold mb-3" style={{color:'var(--ink)'}}>💭 רגע של רפלקציה</h2>
-                        <div className="rounded-2xl border p-3 mb-4" style={{borderColor:'var(--accent)', background:'#ffffff'}}>
-                          <div className="text-sm font-semibold mb-2" style={{color:'var(--ink)'}}>הערכים שנבחרו</div>
-                          <ol className="space-y-1">
-                            {ranked.map((it)=> (
-                              <li key={it.value} className="flex items-center gap-2">
-                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold" style={{background:rankColors[it.rank-1], color:'#fff'}}>{it.rank}</span>
-                                <span className="text-sm" style={{color:'var(--ink)'}}>{it.value}</span>
-                              </li>
-                            ))}
-                          </ol>
-                        </div>
-                        <div className="rounded-2xl border p-4" style={{borderColor:'#e5e7eb', background:'#fafafa'}}>
-                          <p className="text-sm leading-relaxed" style={{color:'#111'}}>
-                            הסתכלו על 5 הערכים שנבחרו. חשבו על מקרה מהחודש האחרון בעבודה –
-                            באיזה מצב הערך <strong>"{ranked[0]?.value || 'הראשון'}"</strong> באמת הנחה אתכם בהחלטה?
-                          </p>
-                        </div>
-                        <div className="mt-auto">
-                          <button onClick={()=>setStage(2)} className="rounded-full px-4 py-2 text-sm font-medium btn-ghost ring-focus">חזרו לדירוג</button>
-                        </div>
-                      </div>
                     </div>
                   )}
                 </main>
