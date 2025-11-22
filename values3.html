@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl"> 
 <head> 
   <meta charset="UTF-8" /> 
-  <meta name="viewport" content="width=1090, initial-scale=1.0" /> 
+  <meta name="viewport" content="width=1200, initial-scale=1.0" /> 
   <title>תרגיל ברור ערכים – RTL</title> 
   <script src="https://cdn.tailwindcss.com"></script> 
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet"> 
@@ -12,7 +12,7 @@
     body{ margin:0; padding:0; background:var(--bg); } 
     .no-select{ -webkit-user-select:none; -moz-user-select:none; user-select:none; } 
 
-    /* קפסולות – גובה קצת קטן יותר, מרווח שורה קטן יותר */ 
+    /* קפסולות – גובה ומרווחים מכוילים */ 
     .chip{ 
       height:40px; 
       min-height:40px; 
@@ -24,7 +24,7 @@
       -webkit-box-orient:vertical; 
       overflow:hidden; 
       white-space:normal; 
-      line-height:1.05; /* מרווח שורה קטן יותר בתוך הקפסולה */ 
+      line-height:1.05; 
     } 
 
     .texture-grid{ 
@@ -96,7 +96,7 @@
       ), 
       scales: ( 
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"> 
-          <path d="M12 3v18M5 7l-3 5h6l-3-5zm14 0l-3 5h6l-3-5zM2 22h20"/> 
+          <path d="M12 3v18M5 7l-3 5h6l-3-5zm14 0ל-3 5h6l-3-5zM2 22h20"/> 
         </svg> 
       ), 
       lightbulb: ( 
@@ -132,31 +132,19 @@
       ) 
     }; 
  
-    // רשימת הערכים המקורית 
     const ORIGINAL_VALUES = [ 
       'אדיבות','אהבה','אהבת המולדת','אומץ','אופטימיות','אושר','אותנטיות','אחדות','אחריות','איזון','אכפתיות','אמון','אמונה','אמפתיה','אמת','אנושיות','אסרטיביות','אצילות','בהירות','בחירה','ביטחון','ביטוי עצמי','בין אדם לחברו','בריאות','גאווה','גבורה','גמישות','דוגמא אישית','הבנה','הגיון','הגינות','הגנה','הגשמה','הדדיות','הובלה','הומור','הוקרת תודה','הזדהות','הישגיות','החלטיות','הסתגלות','הסתפקות במועט','הערכה','הצלחה','הקשבה','הרמוניה','השפעה','התלהבות','התמדה','חברות','חדשנות','חופש בחירה','חיים','חכמת חיים','חמלה','חריצות','ידע','יוזמה','יושר פנימי','יושרה','ייחודיות','יסודיות','יעילות','יציבות','יצירתיות','כבוד','כבוד המשפחה','כיבוד האדם','כנות','למידה','לקיחת סיכונים','מחויבות','מחילה','מיקוד במטרה','מנהיגות','מסורת','מסירות','מעורבות','מעשיות','מצוינות','מקוריות','מקצועיות','משמעת עצמית','משפחה','נאמנות','נדיבות','נוחות','נחישות','ניקיון','נתינה','סבלנות','סדר','סובלנות','ספונטניות','עבודת צוות','עזרה לזולת','ענווה','עצמאות','עקביות','פשטות','פתיחות','צדק','צמיחה','צניעות','קבלה עצמית','רוגע','רוחניות','רעות','שאפתנות','שוויון','שותפות','שיתוף פעולה','שמחת חיים','תמימות','תעוזה','תקווה','תקשורת' 
     ]; 
  
-    // אותם ערכים שהסרנו לגמרי כדי להגיע למטריצה מלאה בלי חורים (11×9=99) 
+    // עכשיו נשארים בחוץ רק 7 ערכים – 117-7 = 110 = 11×10 
     const REMOVED_VALUES = [ 
       'אהבת המולדת', 
-      'אצילות', 
       'הסתפקות במועט', 
-      'חכמת חיים', 
       'נוחות', 
-      'ניקיון', 
-      'ספונטניות', 
-      'שמחת חיים', 
-      'תמימות', 
-      'אחדות', 
       'גאווה', 
       'גבורה', 
-      'הזדהות', 
-      'הסתגלות', 
-      'התלהבות', 
-      'סדר', 
-      'רוחניות', 
-      'שאפתנות' 
+      'ספונטניות', 
+      'תמימות' 
     ]; 
  
     const ALL_VALUES = ORIGINAL_VALUES.filter(v => !REMOVED_VALUES.includes(v)); 
@@ -290,7 +278,7 @@
       ); 
  
       return ( 
-        <div className="no-select relative" style={{ width:'1090px', height:'535px' }}> 
+        <div className="no-select relative" style={{ width:'1200px', height:'590px' }}> 
           <div className="h-full w-full flex flex-col bg-white rounded-2xl overflow-hidden"> 
             <Stepper onOpenHelp={()=>setShowIntro(true)} /> 
  
@@ -417,7 +405,7 @@
                         className="grid gap-1.5" 
                         style={{ 
                           gridTemplateColumns:`repeat(${COLS}, minmax(0, 1fr))`, 
-                          gridAutoRows:'minmax(40px,auto)'  /* תואם לגובה הקפסולה – שלא ייחתך בשורה האחרונה */ 
+                          gridAutoRows:'minmax(40px,auto)'  /* 10 שורות */ 
                         }} 
                       > 
                         {values.map((value, idx) => { 
