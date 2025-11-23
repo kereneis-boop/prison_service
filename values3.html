@@ -12,7 +12,6 @@
     body{ margin:0; padding:0; background:var(--bg); } 
     .no-select{ -webkit-user-select:none; -moz-user-select:none; user-select:none; } 
 
-    /* קפסולות – גובה ומרווחים מכוילים */ 
     .chip{ 
       height:40px; 
       min-height:40px; 
@@ -61,7 +60,7 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script> 
  
   <script type="text/babel"> 
-    const { useState } = React; 
+    const { useState, useRef } = React; 
  
     const GripVertical = ({ size = 22, className='' }) => ( 
       <svg 
@@ -96,7 +95,7 @@
       ), 
       scales: ( 
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"> 
-          <path d="M12 3v18M5 7l-3 5h6l-3-5zm14 0ל-3 5h6l-3-5zM2 22h20"/> 
+          <path d="M12 3v18M5 7l-3 5h6l-3-5zm14 0l-3 5h6l-3-5zM2 22h20"/> 
         </svg> 
       ), 
       lightbulb: ( 
@@ -136,7 +135,7 @@
       'אדיבות','אהבה','אהבת המולדת','אומץ','אופטימיות','אושר','אותנטיות','אחדות','אחריות','איזון','אכפתיות','אמון','אמונה','אמפתיה','אמת','אנושיות','אסרטיביות','אצילות','בהירות','בחירה','ביטחון','ביטוי עצמי','בין אדם לחברו','בריאות','גאווה','גבורה','גמישות','דוגמא אישית','הבנה','הגיון','הגינות','הגנה','הגשמה','הדדיות','הובלה','הומור','הוקרת תודה','הזדהות','הישגיות','החלטיות','הסתגלות','הסתפקות במועט','הערכה','הצלחה','הקשבה','הרמוניה','השפעה','התלהבות','התמדה','חברות','חדשנות','חופש בחירה','חיים','חכמת חיים','חמלה','חריצות','ידע','יוזמה','יושר פנימי','יושרה','ייחודיות','יסודיות','יעילות','יציבות','יצירתיות','כבוד','כבוד המשפחה','כיבוד האדם','כנות','למידה','לקיחת סיכונים','מחויבות','מחילה','מיקוד במטרה','מנהיגות','מסורת','מסירות','מעורבות','מעשיות','מצוינות','מקוריות','מקצועיות','משמעת עצמית','משפחה','נאמנות','נדיבות','נוחות','נחישות','ניקיון','נתינה','סבלנות','סדר','סובלנות','ספונטניות','עבודת צוות','עזרה לזולת','ענווה','עצמאות','עקביות','פשטות','פתיחות','צדק','צמיחה','צניעות','קבלה עצמית','רוגע','רוחניות','רעות','שאפתנות','שוויון','שותפות','שיתוף פעולה','שמחת חיים','תמימות','תעוזה','תקווה','תקשורת' 
     ]; 
  
-    // עכשיו נשארים בחוץ רק 7 ערכים – 117-7 = 110 = 11×10 
+    // משאירים בחוץ רק 7 ערכים כדי להגיע ל-110 (11×10) 
     const REMOVED_VALUES = [ 
       'אהבת המולדת', 
       'הסתפקות במועט', 
@@ -196,6 +195,9 @@
       const COLS = 11; 
       const values = ALL_VALUES; 
  
+      const rankListRef = useRef(null); 
+      const dragPointerIdRef = useRef(null); 
+ 
       const toggleValue = (v) => { 
         if (selected.includes(v)) { 
           setSelected(selected.filter(x=>x!==v)); 
@@ -213,23 +215,66 @@
         } 
       }; 
  
-      const onDragStart=(e,idx)=>{ 
-        setDragIdx(idx); 
-        e.dataTransfer.effectAllowed='move'; 
+      // העברת פריט בעזרת חיצים 
+      const moveItem = (from, to) => { 
+        if (to < 0 || to >= ranked.length || from === to) return; 
+        setRanked(prev => { 
+          const arr=[...prev]; 
+          const item=arr[from]; 
+          arr.splice(from,1); 
+          arr.splice(to,0,item); 
+          return arr.map((o,i)=>({...o,rank:i+1})); 
+        }); 
+        setDragIdx(null); 
       }; 
  
-      const onDragOver=(e,idx)=>{ 
-        e.preventDefault(); 
-        if(dragIdx===null||dragIdx===idx) return; 
-        const arr=[...ranked]; 
-        const it=arr[dragIdx]; 
-        arr.splice(dragIdx,1); 
-        arr.splice(idx,0,it); 
+      // Drag במובייל/דסקטופ – Pointer Events 
+      const handlePointerDown = (e, idx) => { 
+        if (e.pointerType === 'mouse' && e.button !== 0) return; 
+        dragPointerIdRef.current = e.pointerId; 
         setDragIdx(idx); 
-        setRanked(arr.map((o,i)=>({...o,rank:i+1}))); 
       }; 
  
-      const onDragEnd=()=> setDragIdx(null); 
+      const handlePointerMove = (e) => { 
+        if (dragIdx === null) return; 
+        if (dragPointerIdRef.current != null && e.pointerId !== dragPointerIdRef.current) return; 
+        if (!rankListRef.current) return; 
+ 
+        const firstItem = rankListRef.current.querySelector('[data-rank-item="0"]'); 
+        const lastItem = rankListRef.current.querySelector(`[data-rank-item="${ranked.length-1}"]`); 
+        if (!firstItem || !lastItem) return; 
+ 
+        const top = firstItem.getBoundingClientRect().top; 
+        const bottom = lastItem.getBoundingClientRect().bottom; 
+        const total = bottom - top; 
+        if (total <= 0) return; 
+ 
+        let relY = e.clientY - top; 
+        if (relY < 0) relY = 0; 
+        if (relY > total - 1) relY = total - 1; 
+ 
+        const rowHeight = total / ranked.length; 
+        let newIdx = Math.floor(relY / rowHeight); 
+        if (newIdx < 0) newIdx = 0; 
+        if (newIdx > ranked.length-1) newIdx = ranked.length-1; 
+        if (newIdx === dragIdx) return; 
+ 
+        setRanked(prev => { 
+          const arr=[...prev]; 
+          const item=arr[dragIdx]; 
+          arr.splice(dragIdx,1); 
+          arr.splice(newIdx,0,item); 
+          const updated = arr.map((o,i)=>({...o,rank:i+1})); 
+          setDragIdx(newIdx); 
+          return updated; 
+        }); 
+      }; 
+ 
+      const handlePointerUp = (e) => { 
+        if (dragPointerIdRef.current != null && e.pointerId !== dragPointerIdRef.current) return; 
+        dragPointerIdRef.current = null; 
+        setDragIdx(null); 
+      }; 
  
       const canGoRank = selected.length===5; 
  
@@ -341,7 +386,7 @@
                       <div className="h-full flex flex-col"> 
                         <div className="mb-1 text-sm font-semibold" style={{color:'var(--ink)'}}>🏆 הסדר שנבנה</div> 
                         <div className="text-[11px] text-gray-600 mb-2"> 
-                          כדי לשנות את הסדר, גררו את הערכים למעלה או למטה. 
+                          כדי לשנות את הסדר, גררו את הערכים למעלה או למטה או השתמשו בחיצים. 
                         </div> 
                         <ol className="space-y-1.5 flex-1 overflow-hidden"> 
                           {ranked.map((it)=> ( 
@@ -405,7 +450,7 @@
                         className="grid gap-1.5" 
                         style={{ 
                           gridTemplateColumns:`repeat(${COLS}, minmax(0, 1fr))`, 
-                          gridAutoRows:'minmax(40px,auto)'  /* 10 שורות */ 
+                          gridAutoRows:'minmax(40px,auto)' 
                         }} 
                       > 
                         {values.map((value, idx) => { 
@@ -433,17 +478,21 @@
                   )} 
  
                   {stage===2 && ( 
-                    <div className="absolute inset-0 p-3 grid grid-rows-5 gap-2"> 
+                    <div 
+                      ref={rankListRef} 
+                      className="absolute inset-0 p-3 grid grid-rows-5 gap-2" 
+                      onPointerMove={handlePointerMove} 
+                      onPointerUp={handlePointerUp} 
+                      onPointerCancel={handlePointerUp} 
+                    > 
                       {ranked.map((it, idx)=> ( 
                         <div 
                           key={it.value} 
-                          draggable 
-                          onDragStart={(e)=>onDragStart(e,idx)} 
-                          onDragOver={(e)=>onDragOver(e,idx)} 
-                          onDragEnd={onDragEnd} 
+                          data-rank-item={idx} 
+                          onPointerDown={(e)=>handlePointerDown(e,idx)} 
                           className={ 
-                            `bg-white rounded-2xl px-3 flex items-center gap-3 cursor-move border-2 transition-all ring-focus ` + 
-                            `${dragIdx===idx? 'opacity-75 scale-[.99]':'opacity-100'}` 
+                            `bg-white rounded-2xl px-3 flex items-center gap-3 border-2 transition-all ring-focus ` + 
+                            `${dragIdx===idx? 'opacity-75 scale-[.99] cursor-grabbing':'opacity-100 cursor-grab'}` 
                           } 
                           style={{borderColor:'#e5e7eb'}} 
                         > 
@@ -462,6 +511,28 @@
                             title={it.value} 
                           > 
                             {it.value} 
+                          </div> 
+                          <div className="flex flex-col gap-0.5"> 
+                            <button 
+                              type="button" 
+                              onClick={(ev)=>{ ev.stopPropagation(); moveItem(idx, idx-1); }} 
+                              disabled={idx===0} 
+                              className="w-6 h-6 flex items-center justify-center rounded-full border text-[10px] leading-none disabled:opacity-40 disabled:cursor-default" 
+                              aria-label="העלאת הערך מעלה בדירוג" 
+                              style={{borderColor:'#e5e7eb'}} 
+                            > 
+                              ▲ 
+                            </button> 
+                            <button 
+                              type="button" 
+                              onClick={(ev)=>{ ev.stopPropagation(); moveItem(idx, idx+1); }} 
+                              disabled={idx===ranked.length-1} 
+                              className="w-6 h-6 flex items-center justify-center rounded-full border text-[10px] leading-none disabled:opacity-40 disabled:cursor-default" 
+                              aria-label="הורדת הערך מטה בדירוג" 
+                              style={{borderColor:'#e5e7eb'}} 
+                            > 
+                              ▼ 
+                            </button> 
                           </div> 
                         </div> 
                       ))} 
@@ -530,7 +601,7 @@
                       <div className="space-y-0.5"> 
                         <div className="font-semibold" style={{color:'var(--ink)'}}>שלב 2 – דירוג הערכים</div> 
                         <p className="text-[12px] text-gray-700"> 
-                          לאחר שבחרתם 5 ערכים, דרגו אותם על פי סדר החשיבות באמצעות גרירה למעלה או למטה. 
+                          לאחר שבחרתם 5 ערכים, דרגו אותם על פי סדר החשיבות באמצעות גרירה למעלה או למטה או שימוש בחיצים הקטנים. 
                           <span className="inline-block mr-1 font-semibold">1</span> 
                           = הערך החשוב ביותר עבורכם, 
                           <span className="inline-block mx-1 font-semibold">5</span> 
