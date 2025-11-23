@@ -95,7 +95,7 @@
       ), 
       scales: ( 
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"> 
-          <path d="M12 3v18M5 7l-3 5h6l-3-5zm14 0l-3 5h6l-3-5zM2 22h20"/> 
+          <path d="M12 3v18M5 7l-3 5h6ל-3-5zm14 0ל-3 5h6ל-3-5zM2 22h20"/> 
         </svg> 
       ), 
       lightbulb: ( 
@@ -135,7 +135,6 @@
       'אדיבות','אהבה','אהבת המולדת','אומץ','אופטימיות','אושר','אותנטיות','אחדות','אחריות','איזון','אכפתיות','אמון','אמונה','אמפתיה','אמת','אנושיות','אסרטיביות','אצילות','בהירות','בחירה','ביטחון','ביטוי עצמי','בין אדם לחברו','בריאות','גאווה','גבורה','גמישות','דוגמא אישית','הבנה','הגיון','הגינות','הגנה','הגשמה','הדדיות','הובלה','הומור','הוקרת תודה','הזדהות','הישגיות','החלטיות','הסתגלות','הסתפקות במועט','הערכה','הצלחה','הקשבה','הרמוניה','השפעה','התלהבות','התמדה','חברות','חדשנות','חופש בחירה','חיים','חכמת חיים','חמלה','חריצות','ידע','יוזמה','יושר פנימי','יושרה','ייחודיות','יסודיות','יעילות','יציבות','יצירתיות','כבוד','כבוד המשפחה','כיבוד האדם','כנות','למידה','לקיחת סיכונים','מחויבות','מחילה','מיקוד במטרה','מנהיגות','מסורת','מסירות','מעורבות','מעשיות','מצוינות','מקוריות','מקצועיות','משמעת עצמית','משפחה','נאמנות','נדיבות','נוחות','נחישות','ניקיון','נתינה','סבלנות','סדר','סובלנות','ספונטניות','עבודת צוות','עזרה לזולת','ענווה','עצמאות','עקביות','פשטות','פתיחות','צדק','צמיחה','צניעות','קבלה עצמית','רוגע','רוחניות','רעות','שאפתנות','שוויון','שותפות','שיתוף פעולה','שמחת חיים','תמימות','תעוזה','תקווה','תקשורת' 
     ]; 
  
-    // משאירים בחוץ רק 7 ערכים כדי להגיע ל-110 (11×10) 
     const REMOVED_VALUES = [ 
       'אהבת המולדת', 
       'הסתפקות במועט', 
@@ -215,7 +214,6 @@
         } 
       }; 
  
-      // העברת פריט בעזרת חיצים 
       const moveItem = (from, to) => { 
         if (to < 0 || to >= ranked.length || from === to) return; 
         setRanked(prev => { 
@@ -228,7 +226,6 @@
         setDragIdx(null); 
       }; 
  
-      // Drag במובייל/דסקטופ – Pointer Events 
       const handlePointerDown = (e, idx) => { 
         if (e.pointerType === 'mouse' && e.button !== 0) return; 
         dragPointerIdRef.current = e.pointerId; 
@@ -343,24 +340,24 @@
                             {selected.length}/5 
                           </div> 
                         </div> 
-                        <div className="text-[11px] text-gray-600"> 
+                        <div className="text-sm text-gray-600"> 
                           בחרו עד 5 ערכים. להסרה – לחיצה חוזרת. 
                         </div> 
-                        <div className="mt-2 grid grid-cols-1 gap-1.5"> 
+                        <div className="mt-3 flex-1 space-y-1.5 overflow-auto"> 
                           {selected.map((v,i)=> ( 
                             <div 
                               key={v} 
-                              className="text-xs px-2 h-[30px] rounded-full border flex items-center gap-1" 
+                              className="text-sm px-2 h-[32px] rounded-full border flex items-center gap-1" 
                               style={{borderColor:'#e5e7eb'}} 
                             > 
-                              <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold bg-black text-white"> 
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-bold bg-black text-white"> 
                                 {i+1} 
                               </span> 
                               <span className="truncate">{v}</span> 
                             </div> 
                           ))} 
                         </div> 
-                        <div className="mt-2 grid grid-cols-2 gap-2"> 
+                        <div className="mt-3 grid grid-cols-2 gap-2"> 
                           <button 
                             type="button" 
                             onClick={resetSelect} 
@@ -385,10 +382,10 @@
                     {stage===2 && ( 
                       <div className="h-full flex flex-col"> 
                         <div className="mb-1 text-sm font-semibold" style={{color:'var(--ink)'}}>🏆 הסדר שנבנה</div> 
-                        <div className="text-[11px] text-gray-600 mb-2"> 
-                          כדי לשנות את הסדר, גררו את הערכים למעלה או למטה או השתמשו בחיצים. 
+                        <div className="text-sm text-gray-600 mb-2"> 
+                          לשינוי הסדר – גררו ערכים למעלה או למטה, או לחצו על החיצים הקטנים. 
                         </div> 
-                        <ol className="space-y-1.5 flex-1 overflow-hidden"> 
+                        <ol className="space-y-1.5 flex-1 overflow-auto"> 
                           {ranked.map((it)=> ( 
                             <li 
                               key={it.value} 
@@ -396,13 +393,13 @@
                               style={{borderColor:'#e5e7eb'}} 
                             > 
                               <div 
-                                className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold" 
+                                className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold" 
                                 style={{background:rankColors[it.rank-1], color:'#fff'}} 
                               > 
                                 {it.rank} 
                               </div> 
                               <span 
-                                className="text-xs font-medium truncate" 
+                                className="text-sm font-medium truncate" 
                                 style={{color:'var(--ink)'}} 
                               > 
                                 {it.value} 
@@ -410,7 +407,7 @@
                             </li> 
                           ))} 
                         </ol> 
-                        <div className="mt-2 grid grid-cols-2 gap-2"> 
+                        <div className="mt-3 grid grid-cols-2 gap-2"> 
                           <button 
                             type="button" 
                             onClick={async()=>{ 
@@ -542,17 +539,17 @@
               </div> 
             </div> 
  
-            {/* חלונית הנחיות ראשונית */} 
+            {/* חלונית הנחיות ראשונית – רחבה, מתומצתת, פונט גדול יותר */} 
             {showIntro && ( 
               <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40"> 
                 <div 
-                  className="bg-white rounded-3xl shadow-xl w-[640px] max-w-[95%] border p-6 flex flex-col" 
+                  className="bg-white rounded-3xl shadow-xl w-[720px] max-w-[95%] border p-6 flex flex-col" 
                   style={{borderColor:'#e5e7eb'}} 
                 > 
                   <div className="flex items-start justify-between gap-4 mb-4"> 
                     <div> 
                       <div 
-                        className="text-[11px] font-semibold tracking-wide mb-1" 
+                        className="text-sm font-semibold tracking-wide mb-1" 
                         style={{color:'var(--accent)'}} 
                       > 
                         תרגיל בירור ערכים אישיים 
@@ -560,8 +557,8 @@
                       <h2 className="text-lg font-semibold" style={{color:'var(--ink)'}}> 
                         הנחיות לתרגיל – 3 שלבים 
                       </h2> 
-                      <p className="mt-1 text-xs text-gray-600"> 
-                        בתרגיל זה תבחרו ותדרגו את חמשת הערכים שמובילים אתכם בעבודה ובחיים האישיים. 
+                      <p className="mt-1 text-base text-gray-700 leading-relaxed"> 
+                        תבחרו 5 ערכים שמובילים אתכם, תדרגו אותם ותתנו דוגמה קצרה מהחיים. 
                       </p> 
                     </div> 
                     <button 
@@ -584,9 +581,9 @@
                       </div> 
                       <div className="space-y-0.5"> 
                         <div className="font-semibold" style={{color:'var(--ink)'}}>שלב 1 – בחירת ערכים</div> 
-                        <p className="text-[12px] text-gray-700"> 
-                          עברו על הרשימה במסך הבא ולחצו לבחירה על עד 5 ערכים המהווים את העקרונות לפיהם אתם פועלים ביום־יום. 
-                          להסרה – לחיצה חוזרת על הערך. 
+                        <p className="text-base text-gray-700 leading-relaxed"> 
+                          במסך הבא לחצו כדי לבחור עד 5 ערכים שמתארים אתכם. 
+                          לחיצה נוספת על ערך שנבחר – מסירה אותו. 
                         </p> 
                       </div> 
                     </div> 
@@ -600,13 +597,14 @@
                       </div> 
                       <div className="space-y-0.5"> 
                         <div className="font-semibold" style={{color:'var(--ink)'}}>שלב 2 – דירוג הערכים</div> 
-                        <p className="text-[12px] text-gray-700"> 
-                          לאחר שבחרתם 5 ערכים, דרגו אותם על פי סדר החשיבות באמצעות גרירה למעלה או למטה או שימוש בחיצים הקטנים. 
-                          <span className="inline-block mr-1 font-semibold">1</span> 
-                          = הערך החשוב ביותר עבורכם, 
-                          <span className="inline-block mx-1 font-semibold">5</span> 
-                          = הערך שפחות מוביל. 
-                          בסיום, בלחיצה על הכפתור <strong>„העתיקו את הדירוג”</strong>, כל הרשימה תועתק בבת אחת ותוכלו להדביק אותה במסך הבא. 
+                        <p className="text-base text-gray-700 leading-relaxed"> 
+                          דרגו את 5 הערכים לפי חשיבות: 
+                          <span className="font-semibold mx-1">1</span> 
+                          = הכי חשוב, 
+                          <span className="font-semibold mx-1">5</span> 
+                          = עדיין חשוב אבל פחות. 
+                          אפשר לגרור ערכים למעלה/למטה או להשתמש בחיצים לצד כל ערך. 
+                          בסיום לחצו על <strong>„העתיקו את הדירוג”</strong> כדי להמשיך למסך הבא. 
                         </p> 
                       </div> 
                     </div> 
@@ -619,18 +617,17 @@
                         3 
                       </div> 
                       <div className="space-y-0.5"> 
-                        <div className="font-semibold" style={{color:'var(--ink)'}}>שלב 3 – רגע של התבוננות במסך הבא</div> 
-                        <p className="text-[12px] text-gray-700"> 
-                          במסך שלאחר הדירוג תתבקשו להדביק את הרשימה שהעתקתם, ולתאר בקצרה מצב מהזמן האחרון שבו אחד 
-                          הערכים שבחרתם הנחה אתכם בפעולה או בהחלטה. 
+                        <div className="font-semibold" style={{color:'var(--ink)'}}>שלב 3 – רגע של התבוננות</div> 
+                        <p className="text-base text-gray-700 leading-relaxed"> 
+                          במסך הבא תדביקו את הדירוג ותתארו בקצרה מצב שבו אחד הערכים האלו הוביל פעולה או החלטה שלכם. 
                         </p> 
                       </div> 
                     </div> 
                   </div> 
  
-                  <div className="mt-auto pt-2 flex items-center justify-between gap-3 text-[11px] text-gray-600"> 
+                  <div className="mt-auto pt-2 flex items-center justify-between gap-3 text-sm text-gray-600"> 
                     <span> 
-                      ניתן לחזור להנחיות בכל שלב באמצעות הכפתור <strong>„הנחיות לתרגיל”</strong> בראש המסך. 
+                      תמיד אפשר לחזור להנחיות דרך הכפתור <strong>„הנחיות לתרגיל”</strong> בראש המסך. 
                     </span> 
                     <button 
                       type="button" 
@@ -652,24 +649,27 @@
                     <div className="text-4xl leading-none text-white drop-shadow pointer-events-none select-none"> 
                       ↗ 
                     </div> 
-                    <div className="bg-white rounded-2xl shadow-lg border px-4 py-3 max-w-xs text-xs" style={{borderColor:'#e5e7eb'}}> 
+                    <div 
+                      className="bg-white rounded-2xl shadow-lg border px-4 py-3 max-w-xs text-sm" 
+                      style={{borderColor:'#e5e7eb'}} 
+                    > 
                       <div className="font-semibold mb-1.5" style={{color:'var(--ink)'}}>הדירוג הועתק</div> 
-                      <p className="mb-2 text-gray-700"> 
+                      <p className="mb-2 text-gray-700 leading-relaxed"> 
                         עכשיו נעבור למסך הבא ונדביק שם את הדירוג שהועתק. 
                       </p> 
-                      <ol className="list-decimal pr-4 space-y-0.5 text-gray-700"> 
+                      <ol className="list-decimal pr-4 space-y-0.5 text-gray-700 leading-relaxed"> 
                         <li>לחצו על החץ הירוק למעבר למסך הבא (בחלק העליון של המסך).</li> 
                         <li>במסך הבא, לחצו בתוך שדה הטקסט המיועד לדירוג.</li> 
                         <li>הדביקו את הדירוג שהועתק באמצעות <strong>Ctrl+V</strong> או <strong>Command+V</strong>.</li> 
                       </ol> 
-                      <p className="mt-2 text-[11px] text-gray-500"> 
+                      <p className="mt-2 text-xs text-gray-500"> 
                         תוכלו לחזור לכאן בכל שלב וללחוץ שוב על „העתיקו את הדירוג” אם תרצו. 
                       </p> 
                       <div className="mt-3 flex justify-end"> 
                         <button 
                           type="button" 
                           onClick={()=>setShowCopyHint(false)} 
-                          className="btn-ghost ring-focus rounded-full px-3 py-1 text-[11px] font-medium" 
+                          className="btn-ghost ring-focus rounded-full px-3 py-1 text-xs font-medium" 
                         > 
                           הבנתי, נמשיך 
                         </button> 
