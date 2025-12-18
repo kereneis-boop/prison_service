@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1200, initial-scale=1.0" />
+  <title>תרגיל ברור ערכים – RTL</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{ --accent:#3a7172; --ink:#000; --bg:#F5F5F5; --bw:1.5px; }
+    *{ font-family:'Heebo',system-ui,-apple-system,'Segoe UI',Arial,sans-serif; }
+    body{ margin:0; padding:0; background:var(--bg); }
+    .no-select{ -webkit-user-select:none; -moz-user-select:none; user-select:none; }
+
+    /* גובה צ'יפ מותאם ל-33px כדי להבטיח כניסה חלקה של 12 שורות */
+    .chip{
+      height:33px;
+      min-height:33px;
+      max-height:33px;
+    }
+    .chip-label{
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+      white-space:normal;
+      line-height:1.0; /* צמצום גובה שורה */
+    }
+
+    .texture-grid{
+      background-image:
+        linear-gradient(rgba(0,0,0,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,.03) 1px, transparent 1px);
+      background-size: 16px 16px;
+    }
+    .lanes{
+      background-image: repeating-linear-gradient(
+        to bottom,
+        rgba(0,0,0,.035) 0,
+        rgba(0,0,0,.035) 66px,
+        transparent 66px,
+        transparent 86px
+      );
+    }
+    .btn{ border:var(--bw) solid #111; background:#fff; color:#000; transition:all .15s ease; }
+    .btn:hover{ background:#f5f5f5; }
+    .btn--active{ border:var(--bw) solid var(--accent); background:#000; color:#fff; }
+    .btn-ghost{ border:var(--bw) solid #e5e7eb; background:#fff; color:#000; }
+    .btn-accent{ border:var(--bw) solid var(--accent); background:#fff; color:#000; }
+    .ring-focus:focus-visible{ outline:3px solid rgba(58,113,114,.35); outline-offset:2px; }
+    .step{ border:1.5px solid #e5e7eb; }
+    .step--on{ background:var(--accent); color:#fff; border-color:var(--accent); }
+    .step--disabled{ opacity:.35; cursor:not-allowed; }
+    
+    /* אנימציה להופעת המודל הסופי */
+    @keyframes popIn {
+      0% { transform: scale(0.9); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .modal-content { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+    /* אנימציה לחץ המנחה החוצה */
+    @keyframes point-out {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(6px, -6px); }
+    }
+    .arrow-point-out {
+      animation: point-out 1.5s infinite ease-in-out;
+      display: inline-block;
+    }
+  </style>
+</head>
+<body class="overflow-hidden">
+  <div id="root"></div>
+ 
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+ 
+  <script type="text/babel">
+    const { useState, useRef } = React;
+ 
+    const GripVertical = ({ size = 22, className='' }) => (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        className={className}
+        aria-hidden="true"
+      >
+        <circle cx="9" cy="12" r="1"></circle>
+        <circle cx="9" cy="5" r="1"></circle>
+        <circle cx="9" cy="19" r="1"></circle>
+        <circle cx="15" cy="12" r="1"></circle>
+        <circle cx="15" cy="5" r="1"></circle>
+        <circle cx="15" cy="19" r="1"></circle>
+      </svg>
+    );
+ 
+    const ICON = {
+        check: (
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+      )
+    };
+
+    // רשימת 96 הערכים המעודכנת
+    const FINAL_VALUES = [
+      'אדיבות','אהבה','אומץ','אופטימיות','אותנטיות','אחדות','אחריות','איזון',
+      'אכפתיות','אמון','אמונה','אמפתיה','אנושיות','אצילות','בהירות','ביטחון',
+      'ביטוי עצמי','בריאות','גמישות','דוגמא אישית','הגינות','הגשמה','הדדיות','הובלה',
+      'הומור','הוקרת תודה','הישגיות','החלטיות','הסתגלות','הצלחה','הקשבה','הרמוניה',
+      'השפעה','התמדה','חברות','חדשנות','חכמת חיים','חמלה','חריצות','ידע',
+      'יוזמה','יושר פנימי','יושרה','ייחודיות','יסודיות','יעילות','יציבות','יצירתיות',
+      'כבוד','כבוד המשפחה','כיבוד האדם','כנות','למידה','מחויבות','מחילה','מיקוד במטרה',
+      'מנהיגות','מסורת','מסירות','מעורבות','מצוינות','מקצועיות','משמעת עצמית','משפחה',
+      'נאמנות','נדיבות','נחישות','נתינה','סבלנות','סדר','סובלנות','עבודת צוות',
+      'עזרה לזולת','ענווה','עצמאות','עקביות','פשטות','פתיחות','צדק','צמיחה',
+      'צניעות','רוגע','רוחניות','רעות','שאפתנות','שוויון','שותפות','שיתוף פעולה',
+      'שמחת חיים','תעוזה','תקווה','תקשורת','משמעות אישית','אחריות אישית','גמישות מחשבתית','מודעות'
+    ];
+    
+    const ALL_VALUES = FINAL_VALUES.sort((a, b) => a.localeCompare('he'));
+ 
+    const rankColors = ['#0f3d3e','#205a5b','#3a7172','#7fb0b0','#bfd8d8'];
+ 
+    const ValuesExercise = () => {
+      const [stage, setStage] = useState(1);
+      const [selected, setSelected] = useState([]);
+      const [ranked, setRanked] = useState([]);
+      const [dragIdx, setDragIdx] = useState(null);
+      const [showIntro, setShowIntro] = useState(true);
+      const [showFinishModal, setShowFinishModal] = useState(false);
+ 
+      // 96 ערכים / 8 עמודות = 12 שורות
+      const COLS = 8;
+      const values = ALL_VALUES;
+ 
+      const rankListRef = useRef(null);
+      const dragPointerIdRef = useRef(null);
+ 
+      const toggleValue = (v) => {
+        if (selected.includes(v)) {
+          setSelected(selected.filter(x=>x!==v));
+        } else if (selected.length<5) {
+          setSelected([...selected,v]);
+        }
+      };
+ 
+      const resetSelect = () => setSelected([]);
+ 
+      const proceedToRank = () => {
+        if (selected.length === 5) {
+          setRanked(selected.map((v,i)=>({value:v,rank:i+1})));
+          setStage(2);
+        }
+      };
+ 
+      const moveItem = (from, to) => {
+        if (to < 0 || to >= ranked.length || from === to) return;
+        setRanked(prev => {
+          const arr=[...prev];
+          const item=arr[from];
+          arr.splice(from,1);
+          arr.splice(to,0,item);
+          return arr.map((o,i)=>({...o,rank:i+1}));
+        });
+        setDragIdx(null);
+      };
+ 
+      const handlePointerDown = (e, idx) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        dragPointerIdRef.current = e.pointerId;
+        setDragIdx(idx);
+      };
+ 
+      const handlePointerMove = (e) => {
+        if (dragIdx === null) return;
+        if (dragPointerIdRef.current != null && e.pointerId !== dragPointerIdRef.current) return;
+        if (!rankListRef.current) return;
+ 
+        const firstItem = rankListRef.current.querySelector('[data-rank-item="0"]');
+        const lastItem = rankListRef.current.querySelector(`[data-rank-item="${ranked.length-1}"]`);
+        if (!firstItem || !lastItem) return;
+ 
+        const top = firstItem.getBoundingClientRect().top;
+        const bottom = lastItem.getBoundingClientRect().bottom;
+        const total = bottom - top;
+        if (total <= 0) return;
+ 
+        let relY = e.clientY - top;
+        if (relY < 0) relY = 0;
+        if (relY > total - 1) relY = total - 1;
+ 
+        const rowHeight = total / ranked.length;
+        let newIdx = Math.floor(relY / rowHeight);
+        if (newIdx < 0) newIdx = 0;
+        if (newIdx > ranked.length-1) newIdx = ranked.length-1;
+        if (newIdx === dragIdx) return;
+ 
+        setRanked(prev => {
+          const arr=[...prev];
+          const item=arr[dragIdx];
+          arr.splice(dragIdx,1);
+          arr.splice(newIdx,0,item);
+          const updated = arr.map((o,i)=>({...o,rank:i+1}));
+          setDragIdx(newIdx);
+          return updated;
+        });
+      };
+ 
+      const handlePointerUp = (e) => {
+        if (dragPointerIdRef.current != null && e.pointerId !== dragPointerIdRef.current) return;
+        dragPointerIdRef.current = null;
+        setDragIdx(null);
+      };
+ 
+      const canGoRank = selected.length===5;
+ 
+      const Stepper = ({ onOpenHelp }) => (
+        <div className="px-4 py-2 border-b" style={{borderColor:'#e5e7eb'}}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                {i:1,t:'בחירה',enabled:true},
+                {i:2,t:'דירוג',enabled:canGoRank}
+              ].map(s=> (
+                <button
+                  key={s.i}
+                  type="button"
+                  onClick={()=> s.enabled && setStage(s.i)}
+                  className={
+                    `step rounded-xl px-3 py-2 flex items-center gap-2 text-sm font-medium ` +
+                    `${stage===s.i?'step--on':''} ` +
+                    `${s.enabled?'cursor-pointer':'step--disabled'}`
+                  }
+                >
+                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold bg-black text-white">
+                    {s.i}
+                  </span>
+                  <span>{s.t}</span>
+                </button>
+              ))}
+            </div>
+ 
+            <button
+              type="button"
+              onClick={onOpenHelp}
+              className="inline-flex items-center text-xs font-medium rounded-full px-3 py-1.5 btn-ghost ring-focus whitespace-nowrap"
+            >
+              הנחיות לתרגיל
+            </button>
+          </div>
+        </div>
+      );
+ 
+      return (
+        <div className="no-select relative" style={{ width:'1200px', height:'590px' }}>
+          <div className="h-full w-full flex flex-col bg-white rounded-2xl overflow-hidden">
+            <Stepper onOpenHelp={()=>setShowIntro(true)} />
+ 
+            <div className="flex-1 overflow-hidden">
+              <div className="h-full flex flex-row p-4 gap-4">
+                {/* RIGHT PANEL */}
+                <aside className="w-80 flex flex-col flex-shrink-0">
+                  <div className="bg-white rounded-2xl p-4 border flex-1" style={{borderColor:'#e5e7eb'}}>
+                    {stage===1 && (
+                      <div className="h-full flex flex-col">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="text-xl font-bold" style={{color:'var(--ink)'}}>בחירת ערכים</div>
+                          <div
+                            className="text-sm font-bold px-3 py-1 rounded-full border"
+                            style={{background:'#eaf2f2', borderColor:'var(--accent)', color:'var(--ink)'}}
+                          >
+                            {selected.length}/5
+                          </div>
+                        </div>
+                        <div className="text-base text-gray-700 leading-snug font-medium mb-3">
+                          בחרו עד 5 ערכים. להסרה – לחיצה חוזרת.
+                        </div>
+                        <div className="mt-2 flex-1 space-y-2 overflow-auto">
+                          {selected.map((v,i)=> (
+                            <div
+                              key={v}
+                              className="text-base px-3 h-[40px] rounded-full border flex items-center gap-2"
+                              style={{borderColor:'#e5e7eb'}}
+                            >
+                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold bg-black text-white">
+                                {i+1}
+                              </span>
+                              <span className="truncate font-medium">{v}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-4 grid grid-cols-2 gap-3">
+                          <button
+                            type="button"
+                            onClick={resetSelect}
+                            className="rounded-full px-4 py-2 text-sm font-bold btn-ghost ring-focus"
+                          >
+                            איפוס
+                          </button>
+                          <button
+                            type="button"
+                            onClick={proceedToRank}
+                            className={
+                              `rounded-full px-4 py-2 text-sm font-bold btn-accent ring-focus ` +
+                              `${!canGoRank?'opacity-40 pointer-events-none':''}`
+                            }
+                          >
+                            המשיכו
+                          </button>
+                        </div>
+                      </div>
+                    )}
+ 
+                    {stage===2 && (
+                      <div className="h-full flex flex-col">
+                        <div className="mb-2 text-xl font-bold" style={{color:'var(--ink)'}}>🏆 הסדר שנבנה</div>
+                        <div className="text-base text-gray-700 font-medium mb-4 leading-snug">
+                          לשינוי הסדר – גררו ערכים למעלה או למטה, או לחצו על החיצים הקטנים.
+                        </div>
+                        <ol className="space-y-2 flex-1 overflow-auto">
+                          {ranked.map((it)=> (
+                            <li
+                              key={it.value}
+                              className="flex items-center gap-3 px-3 py-2 rounded-full border"
+                              style={{borderColor:'#e5e7eb'}}
+                            >
+                              <div
+                                className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+                                style={{background:rankColors[it.rank-1], color:'#fff'}}
+                              >
+                                {it.rank}
+                              </div>
+                              <span
+                                className="text-base font-bold truncate"
+                                style={{color:'var(--ink)'}}
+                              >
+                                {it.value}
+                              </span>
+                            </li>
+                          ))}
+                        </ol>
+                        <div className="mt-4 grid grid-cols-2 gap-3">
+                          <button
+                            type="button"
+                            onClick={()=> setShowFinishModal(true)}
+                            className="rounded-full px-4 py-2 text-sm font-bold btn-accent ring-focus col-span-2"
+                          >
+                            סיימתי לדרג
+                          </button>
+                          <button
+                            type="button"
+                            onClick={()=> setStage(1)}
+                            className="rounded-full px-4 py-2 text-sm font-bold btn-ghost ring-focus col-span-2"
+                          >
+                            חזרה לבחירה
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </aside>
+ 
+                {/* LEFT MAIN – בחירה / דירוג */}
+                <main
+                  className={
+                    `flex-1 min-w-0 overflow-hidden rounded-2xl border relative ` +
+                    `${stage===2? 'lanes':'texture-grid'}`
+                  }
+                  style={{borderColor:'#e5e7eb'}}
+                >
+                  {stage===1 && (
+                    <div className="absolute inset-0 p-2"> {/* הוקטן ל-p-2 */}
+                      <div
+                        className="grid gap-1" /* הוקטן ל-gap-1 (4px) */
+                        style={{
+                          gridTemplateColumns:`repeat(${COLS}, minmax(0, 1fr))`,
+                          gridAutoRows:'minmax(33px,auto)' // הוקטן ל-33px
+                        }}
+                      >
+                        {values.map((value, idx) => {
+                          const isSel = selected.includes(value);
+                          const lockedOut = selected.length>=5 && !isSel;
+                          return (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={()=>toggleValue(value)}
+                              className={
+                                `w-full px-1 rounded-full text-[13px] font-medium flex items-center justify-center chip transition-all ring-focus ` +
+                                `${isSel? 'btn--active':'btn'} ` +
+                                `${lockedOut? 'opacity-25 pointer-events-none':''}`
+                              }
+                              aria-pressed={isSel}
+                              title={value}
+                            >
+                              <span className="chip-label w-full text-center">{value}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+ 
+                  {stage===2 && (
+                    <div
+                      ref={rankListRef}
+                      className="absolute inset-0 p-3 grid grid-rows-5 gap-2"
+                      onPointerMove={handlePointerMove}
+                      onPointerUp={handlePointerUp}
+                      onPointerCancel={handlePointerUp}
+                    >
+                      {ranked.map((it, idx)=> (
+                        <div
+                          key={it.value}
+                          data-rank-item={idx}
+                          onPointerDown={(e)=>handlePointerDown(e,idx)}
+                          className={
+                            `bg-white rounded-2xl px-3 flex items-center gap-3 border-2 transition-all ring-focus ` +
+                            `${dragIdx===idx? 'opacity-75 scale-[.99] cursor-grabbing':'opacity-100 cursor-grab'}`
+                          }
+                          style={{borderColor:'#e5e7eb'}}
+                        >
+                          <div className="text-gray-400" aria-hidden="true">
+                            <GripVertical/>
+                          </div>
+                          <div
+                            className="w-10 h-10 rounded-full flex items-center justify-center font-bold"
+                            style={{background:rankColors[it.rank-1], color:'#fff'}}
+                          >
+                            {it.rank}
+                          </div>
+                          <div
+                            className="flex-1 text-base font-medium truncate"
+                            style={{color:'var(--ink)'}}
+                            title={it.value}
+                          >
+                            {it.value}
+                          </div>
+                          <div className="flex flex-col gap-0.5">
+                            <button
+                              type="button"
+                              onClick={(ev)=>{ ev.stopPropagation(); moveItem(idx, idx-1); }}
+                              disabled={idx===0}
+                              className="w-6 h-6 flex items-center justify-center rounded-full border text-[10px] leading-none disabled:opacity-40 disabled:cursor-default"
+                              aria-label="העלאת הערך מעלה בדירוג"
+                              style={{borderColor:'#e5e7eb'}}
+                            >
+                              ▲
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(ev)=>{ ev.stopPropagation(); moveItem(idx, idx+1); }}
+                              disabled={idx===ranked.length-1}
+                              className="w-6 h-6 flex items-center justify-center rounded-full border text-[10px] leading-none disabled:opacity-40 disabled:cursor-default"
+                              aria-label="הורדת הערך מטה בדירוג"
+                              style={{borderColor:'#e5e7eb'}}
+                            >
+                              ▼
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </main>
+              </div>
+            </div>
+ 
+            {/* חלונית הנחיות ראשונית – מעודכנת ל-2 שלבים */}
+            {showIntro && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40">
+                <div
+                  className="bg-white rounded-3xl shadow-xl w-[760px] max-w-[95%] border p-6 flex flex-col"
+                  style={{borderColor:'#e5e7eb'}}
+                >
+                  <div className="flex items-start justify-between gap-4 mb-4">
+                    <div>
+                      <div
+                        className="text-sm font-semibold tracking-wide mb-1"
+                        style={{color:'var(--accent)'}}
+                      >
+                        תרגיל בירור ערכים אישיים
+                      </div>
+                      <h2 className="text-lg font-semibold" style={{color:'var(--ink)'}}>
+                        הנחיות לתרגיל – 2 שלבים
+                      </h2>
+                      <p className="mt-1 text-[15px] text-gray-700 leading-relaxed">
+                        תבחרו 5 ערכים שמובילים אתכם ולבסוף תדרגו אותם לפי חשיבות.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={()=>setShowIntro(false)}
+                      className="btn-ghost ring-focus rounded-full w-8 h-8 flex items-center justify-center text-base leading-none"
+                      aria-label="סגירת ההנחיות"
+                    >
+                      ×
+                    </button>
+                  </div>
+ 
+                  <div className="space-y-3 mb-4 text-sm">
+                    <div className="flex items-start gap-3 step rounded-2xl px-3 py-2.5">
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                        style={{background:'var(--accent)', color:'#fff'}}
+                      >
+                        1
+                      </div>
+                      <div className="space-y-0.5">
+                        <div className="font-semibold" style={{color:'var(--ink)'}}>שלב 1 – בחירת ערכים</div>
+                        <p className="text-[15px] text-gray-700 leading-relaxed">
+                          במסך הבא לחצו כדי לבחור עד 5 ערכים שמתארים אתכם.
+                          לחיצה נוספת על ערך שנבחר – מסירה אותו.
+                        </p>
+                      </div>
+                    </div>
+ 
+                    <div className="flex items-start gap-3 step rounded-2xl px-3 py-2.5">
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                        style={{background:'var(--accent)', color:'#fff'}}
+                      >
+                        2
+                      </div>
+                      <div className="space-y-0.5">
+                        <div className="font-semibold" style={{color:'var(--ink)'}}>שלב 2 – דירוג הערכים</div>
+                        <p className="text-[15px] text-gray-700 leading-relaxed">
+                          דרגו את 5 הערכים לפי חשיבות:
+                          <span className="font-semibold mx-1">1</span>
+                          = הכי חשוב,
+                          <span className="font-semibold mx-1">5</span>
+                          = עדיין חשוב אבל פחות.
+                          אפשר לגרור ערכים למעלה/למטה או להשתמש בחיצים לצד כל ערך.
+                          בסיום לחצו על <strong>„סיימתי לדרג”</strong>.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+ 
+                  <div className="mt-auto pt-2 flex items-center justify-between gap-3 text-base text-gray-600">
+                    <span>
+                      תמיד אפשר לחזור להנחיות דרך הכפתור <strong>„הנחיות לתרגיל”</strong> בראש המסך.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={()=>setShowIntro(false)}
+                      className="btn-accent ring-focus rounded-full px-4 py-1.5 text-xs font-semibold"
+                    >
+                      סגירה והתחלת התרגיל
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+ 
+            {/* חלון סיום ומשוב מרשים */}
+            {showFinishModal && (
+              <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                <div
+                  className="bg-white rounded-3xl shadow-2xl border p-8 flex flex-col items-center justify-center max-w-lg w-full text-center modal-content"
+                  style={{borderColor:'#e5e7eb'}}
+                >
+                  <div
+                    className="w-16 h-16 rounded-full flex items-center justify-center mb-4 shadow-lg"
+                    style={{background:'var(--accent)', color:'#fff'}}
+                  >
+                    {ICON.check}
+                  </div>
+                  
+                  <h2 className="text-2xl font-bold mb-3" style={{color:'var(--ink)'}}>
+                    תהליך הדירוג הושלם בהצלחה!
+                  </h2>
+                  
+                  <p className="text-lg text-gray-700 leading-relaxed mb-6">
+                    תודה על המיקוד והכנות.
+                    <br/>
+                    הערכים שבחרת הם המצפן הפנימי שלך, הם אלו שיכוונו אותך בצמתים חשובים ויעניקו משמעות לעשייה היומיומית שלך.
+                  </p>
+
+                   {/* חלק ההנחיה המודגש עם החץ המונפש */}
+                  <div className="mb-6 p-3 bg-gray-50 rounded-xl border border-gray-200 w-full">
+                     <p className="text-base font-semibold text-gray-800 flex items-center justify-center gap-2">
+                       סגרו את החלון ולחצו על החץ להמשך הלומדה
+                       <span className="text-2xl arrow-point-out text-green-600 leading-none">↗</span>
+                     </p>
+                  </div>
+ 
+                  <button
+                    type="button"
+                    onClick={()=>setShowFinishModal(false)}
+                    className="btn-accent ring-focus rounded-full px-6 py-2 text-sm font-bold shadow-sm"
+                  >
+                    סגירה
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    };
+ 
+    ReactDOM.createRoot(document.getElementById('root')).render(<ValuesExercise/>);
+  </script>
+</body>
+</html>
