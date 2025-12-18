@@ -240,7 +240,7 @@
                     `${s.enabled?'cursor-pointer':'step--disabled'}`
                   }
                 >
-                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold bg-black text-white">
+                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold bg-black text-white shrink-0">
                     {s.i}
                   </span>
                   <span>{s.t}</span>
@@ -290,7 +290,7 @@
                               className="text-base px-3 h-[40px] rounded-full border flex items-center gap-2"
                               style={{borderColor:'#e5e7eb'}}
                             >
-                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold bg-black text-white">
+                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold bg-black text-white shrink-0">
                                 {i+1}
                               </span>
                               <span className="truncate font-medium">{v}</span>
@@ -333,7 +333,7 @@
                               style={{borderColor:'#e5e7eb'}}
                             >
                               <div
-                                className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+                                className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                                 style={{background:rankColors[it.rank-1], color:'#fff'}}
                               >
                                 {it.rank}
@@ -377,12 +377,12 @@
                   style={{borderColor:'#e5e7eb'}}
                 >
                   {stage===1 && (
-                    <div className="absolute inset-0 p-2"> {/* הוקטן ל-p-2 */}
+                    <div className="absolute inset-0 p-2">
                       <div
-                        className="grid gap-1" /* הוקטן ל-gap-1 (4px) */
+                        className="grid gap-1"
                         style={{
                           gridTemplateColumns:`repeat(${COLS}, minmax(0, 1fr))`,
-                          gridAutoRows:'minmax(33px,auto)' // הוקטן ל-33px
+                          gridAutoRows:'minmax(33px,auto)'
                         }}
                       >
                         {values.map((value, idx) => {
@@ -432,7 +432,7 @@
                             <GripVertical/>
                           </div>
                           <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center font-bold"
+                            className="w-10 h-10 rounded-full flex items-center justify-center font-bold shrink-0"
                             style={{background:rankColors[it.rank-1], color:'#fff'}}
                           >
                             {it.rank}
@@ -509,7 +509,7 @@
                   <div className="space-y-3 mb-4 text-sm">
                     <div className="flex items-start gap-3 step rounded-2xl px-3 py-2.5">
                       <div
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                         style={{background:'var(--accent)', color:'#fff'}}
                       >
                         1
@@ -525,7 +525,7 @@
  
                     <div className="flex items-start gap-3 step rounded-2xl px-3 py-2.5">
                       <div
-                        className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                         style={{background:'var(--accent)', color:'#fff'}}
                       >
                         2
